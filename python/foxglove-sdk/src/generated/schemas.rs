@@ -1196,18 +1196,14 @@ impl JointState {
     #[pyo3(signature = (*, timestamp=None, name=None, position=None, velocity=None, effort=None) )]
     fn new(
         timestamp: Option<Timestamp>,
-        name: Option<Vec<&str>>,
+        name: Option<Vec<String>>,
         position: Option<Vec<f64>>,
         velocity: Option<Vec<f64>>,
         effort: Option<Vec<f64>>,
     ) -> Self {
         Self(foxglove::schemas::JointState {
             timestamp: timestamp.map(Into::into),
-            name: name
-                .unwrap_or_default()
-                .into_iter()
-                .map(String::from)
-                .collect(),
+            name: name.unwrap_or_default(),
             position: position.unwrap_or_default(),
             velocity: velocity.unwrap_or_default(),
             effort: effort.unwrap_or_default(),
