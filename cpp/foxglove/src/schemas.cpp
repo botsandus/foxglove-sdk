@@ -1748,7 +1748,10 @@ void jointStateToC(
 ) {
   dest.timestamp =
     src.timestamp ? reinterpret_cast<const foxglove_timestamp*>(&*src.timestamp) : nullptr;
-  dest.name = src.name.data();
+  dest.name =
+    arena.map<foxglove_string>(src.name, [](foxglove_string& dest, const std::string& src, Arena&) {
+      dest = {src.data(), src.size()};
+    });
   dest.name_count = src.name.size();
   dest.position = src.position.data();
   dest.position_count = src.position.size();
