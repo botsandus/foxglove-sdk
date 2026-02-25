@@ -1178,6 +1178,74 @@ impl From<ImageAnnotations> for foxglove::schemas::ImageAnnotations {
     }
 }
 
+/// State of a set of torque-controlled joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
+///
+/// :param timestamp: Timestamp of the joint state data
+/// :param name: Joint names
+/// :param position: Joint positions in radians (revolute) or meters (prismatic)
+/// :param velocity: Joint velocities in rad/s (revolute) or m/s (prismatic)
+/// :param effort: Joint efforts in Nm (revolute) or N (prismatic)
+///
+/// See https://docs.foxglove.dev/docs/visualization/message-schemas/joint-state
+#[pyclass(module = "foxglove.schemas")]
+#[derive(Clone)]
+pub(crate) struct JointState(pub(crate) foxglove::schemas::JointState);
+#[pymethods]
+impl JointState {
+    #[new]
+    #[pyo3(signature = (*, timestamp=None, name=None, position=None, velocity=None, effort=None) )]
+    fn new(
+        timestamp: Option<Timestamp>,
+        name: Option<Vec<&str>>,
+        position: Option<Vec<f64>>,
+        velocity: Option<Vec<f64>>,
+        effort: Option<Vec<f64>>,
+    ) -> Self {
+        Self(foxglove::schemas::JointState {
+            timestamp: timestamp.map(Into::into),
+            name: name
+                .unwrap_or_default()
+                .into_iter()
+                .map(String::from)
+                .collect(),
+            position: position.unwrap_or_default(),
+            velocity: velocity.unwrap_or_default(),
+            effort: effort.unwrap_or_default(),
+        })
+    }
+    fn __repr__(&self) -> String {
+        format!(
+            "JointState(timestamp={:?}, name={:?}, position={:?}, velocity={:?}, effort={:?})",
+            self.0.timestamp, self.0.name, self.0.position, self.0.velocity, self.0.effort,
+        )
+    }
+    /// Returns the JointState schema.
+    #[staticmethod]
+    fn get_schema() -> PySchema {
+        foxglove::schemas::JointState::get_schema().unwrap().into()
+    }
+    /// Encodes the JointState as protobuf.
+    fn encode<'a>(&self, py: Python<'a>) -> Bound<'a, PyBytes> {
+        PyBytes::new_with(
+            py,
+            self.0.encoded_len().expect("foxglove schemas provide len"),
+            |mut b: &mut [u8]| {
+                self.0
+                    .encode(&mut b)
+                    .expect("encoding len was provided above");
+                Ok(())
+            },
+        )
+        .expect("failed to allocate buffer for encoded message")
+    }
+}
+
+impl From<JointState> for foxglove::schemas::JointState {
+    fn from(value: JointState) -> Self {
+        value.0
+    }
+}
+
 /// A key with its associated value
 ///
 /// :param key: Key
@@ -3139,6 +3207,7 @@ pub fn register_submodule(parent_module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<Grid>()?;
     module.add_class::<VoxelGrid>()?;
     module.add_class::<ImageAnnotations>()?;
+    module.add_class::<JointState>()?;
     module.add_class::<KeyValuePair>()?;
     module.add_class::<LaserScan>()?;
     module.add_class::<LinePrimitive>()?;

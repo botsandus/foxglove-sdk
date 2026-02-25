@@ -32,6 +32,7 @@ If the IDL does not support optional fields (e.g. ROS) you must specify a value 
 - [GeoJSON](#geojson)
 - [Grid](#grid)
 - [ImageAnnotations](#imageannotations)
+- [JointState](#jointstate)
 - [KeyValuePair](#keyvaluepair)
 - [LaserScan](#laserscan)
 - [LinePrimitive](#lineprimitive)
@@ -1250,6 +1251,83 @@ Text annotations
 <td>
 
 Additional user-provided metadata associated with the image annotations. Keys must be unique.
+
+</td>
+</tr>
+</table>
+
+## JointState
+
+State of a set of torque-controlled joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
+
+<table>
+  <tr>
+    <th>field</th>
+    <th>type</th>
+    <th>description</th>
+  </tr>
+<tr>
+<td><code>timestamp</code></td>
+<td>
+
+[Timestamp](#timestamp)
+
+</td>
+<td>
+
+Timestamp of the joint state data
+
+</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>
+
+string[]
+
+</td>
+<td>
+
+Joint names
+
+</td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>
+
+float64[]
+
+</td>
+<td>
+
+Joint positions in radians (revolute) or meters (prismatic)
+
+</td>
+</tr>
+<tr>
+<td><code>velocity</code></td>
+<td>
+
+float64[]
+
+</td>
+<td>
+
+Joint velocities in rad/s (revolute) or m/s (prismatic)
+
+</td>
+</tr>
+<tr>
+<td><code>effort</code></td>
+<td>
+
+float64[]
+
+</td>
+<td>
+
+Joint efforts in Nm (revolute) or N (prismatic)
 
 </td>
 </tr>

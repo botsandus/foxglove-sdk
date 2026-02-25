@@ -400,6 +400,28 @@ pub struct ImageAnnotations {
     #[prost(message, repeated, tag = "4")]
     pub metadata: ::prost::alloc::vec::Vec<KeyValuePair>,
 }
+/// State of a set of torque-controlled joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
+///
+/// <https://docs.foxglove.dev/docs/visualization/message-schemas/joint-state>
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct JointState {
+    /// Timestamp of the joint state data
+    #[prost(message, optional, tag = "1")]
+    pub timestamp: ::core::option::Option<crate::messages::Timestamp>,
+    /// Joint names
+    #[prost(string, repeated, tag = "2")]
+    pub name: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Joint positions in radians (revolute) or meters (prismatic)
+    #[prost(double, repeated, tag = "3")]
+    pub position: ::prost::alloc::vec::Vec<f64>,
+    /// Joint velocities in rad/s (revolute) or m/s (prismatic)
+    #[prost(double, repeated, tag = "4")]
+    pub velocity: ::prost::alloc::vec::Vec<f64>,
+    /// Joint efforts in Nm (revolute) or N (prismatic)
+    #[prost(double, repeated, tag = "5")]
+    pub effort: ::prost::alloc::vec::Vec<f64>,
+}
 /// A key with its associated value
 ///
 /// <https://docs.foxglove.dev/docs/visualization/message-schemas/key-value-pair>

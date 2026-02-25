@@ -367,6 +367,29 @@ class ImageAnnotations:
         """Encodes the ImageAnnotations."""
         ...
 
+class JointState:
+    """
+    State of a set of torque-controlled joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
+    """
+
+    def __init__(
+        self,
+        *,
+        timestamp: Timestamp | None = None,
+        name: list[str] | None = None,
+        position: list[float] | None = None,
+        velocity: list[float] | None = None,
+        effort: list[float] | None = None,
+    ) -> None: ...
+    @staticmethod
+    def get_schema() -> Schema:
+        """Returns the JointState schema"""
+        ...
+
+    def encode(self) -> bytes:
+        """Encodes the JointState."""
+        ...
+
 class KeyValuePair:
     """
     A key with its associated value
@@ -1008,6 +1031,7 @@ FoxgloveSchema = Union[
     Grid,
     VoxelGrid,
     ImageAnnotations,
+    JointState,
     KeyValuePair,
     LaserScan,
     LinePrimitive,

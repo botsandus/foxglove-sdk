@@ -1746,6 +1746,44 @@ const LaserScan: FoxgloveMessageSchema = {
   ],
 };
 
+const JointState: FoxgloveMessageSchema = {
+  type: "message",
+  name: "JointState",
+  description:
+    "State of a set of torque-controlled joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.",
+  fields: [
+    {
+      name: "timestamp",
+      type: { type: "nested", schema: Timestamp },
+      description: "Timestamp of the joint state data",
+    },
+    {
+      name: "name",
+      type: { type: "primitive", name: "string" },
+      description: "Joint names",
+      array: true,
+    },
+    {
+      name: "position",
+      type: { type: "primitive", name: "float64" },
+      description: "Joint positions in radians (revolute) or meters (prismatic)",
+      array: true,
+    },
+    {
+      name: "velocity",
+      type: { type: "primitive", name: "float64" },
+      description: "Joint velocities in rad/s (revolute) or m/s (prismatic)",
+      array: true,
+    },
+    {
+      name: "effort",
+      type: { type: "primitive", name: "float64" },
+      description: "Joint efforts in Nm (revolute) or N (prismatic)",
+      array: true,
+    },
+  ],
+};
+
 export const foxgloveMessageSchemas = {
   ArrowPrimitive,
   CameraCalibration,
@@ -1762,6 +1800,7 @@ export const foxgloveMessageSchemas = {
   Grid,
   VoxelGrid,
   ImageAnnotations,
+  JointState,
   KeyValuePair,
   LaserScan,
   LinePrimitive,
