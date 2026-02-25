@@ -400,7 +400,7 @@ pub struct ImageAnnotations {
     #[prost(message, repeated, tag = "4")]
     pub metadata: ::prost::alloc::vec::Vec<KeyValuePair>,
 }
-/// State of a set of torque-controlled joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
+/// State of a set of joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
 ///
 /// <https://docs.foxglove.dev/docs/visualization/message-schemas/joint-state>
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]

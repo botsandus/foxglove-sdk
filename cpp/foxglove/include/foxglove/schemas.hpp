@@ -1055,8 +1055,8 @@ struct ImageAnnotations {
   static Schema schema();
 };
 
-/// @brief State of a set of torque-controlled joints. Each joint is uniquely identified by its
-/// name. All non-empty arrays should have the same length.
+/// @brief State of a set of joints. Each joint is uniquely identified by its name. All non-empty
+/// arrays should have the same length.
 struct JointState {
   /// @brief Timestamp of the joint state data
   std::optional<Timestamp> timestamp;

@@ -1118,7 +1118,7 @@ typedef struct foxglove_image_annotations {
 } foxglove_image_annotations;
 
 /**
- * State of a set of torque-controlled joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
+ * State of a set of joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
  */
 typedef struct foxglove_joint_state {
   /**

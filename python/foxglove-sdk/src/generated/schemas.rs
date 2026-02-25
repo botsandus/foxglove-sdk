@@ -1178,7 +1178,7 @@ impl From<ImageAnnotations> for foxglove::schemas::ImageAnnotations {
     }
 }
 
-/// State of a set of torque-controlled joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
+/// State of a set of joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
 ///
 /// :param timestamp: Timestamp of the joint state data
 /// :param name: Joint names

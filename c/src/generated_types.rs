@@ -2671,7 +2671,7 @@ pub unsafe extern "C" fn foxglove_image_annotations_encode(
     }
 }
 
-/// State of a set of torque-controlled joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
+/// State of a set of joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
 #[repr(C)]
 pub struct JointState {
     /// Timestamp of the joint state data

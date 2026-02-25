@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 
 package foxglove;
 
-// State of a set of torque-controlled joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
+// State of a set of joints. Each joint is uniquely identified by its name. All non-empty arrays should have the same length.
 message JointState {
   // Timestamp of the joint state data
   google.protobuf.Timestamp timestamp = 1;
