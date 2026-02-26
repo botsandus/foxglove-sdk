@@ -382,13 +382,11 @@ int main(int argc, char** argv) {
     [&](const foxglove::PlaybackControlRequest& req) -> std::optional<foxglove::PlaybackState> {
     std::lock_guard<std::mutex> guard(lock);
 
-    bool did_seek = req.seek_time.has_value();
     if (req.seek_time.has_value()) {
       try {
         player.seek(*req.seek_time);
       } catch (const std::exception& e) {
         RCLCPP_WARN(node->get_logger(), "Seek failed: %s", e.what());
-        did_seek = false;
       }
     }
 
@@ -404,7 +402,7 @@ int main(int argc, char** argv) {
       .status = player.status(),
       .current_time = player.current_time(),
       .playback_speed = static_cast<float>(player.playback_speed()),
-      .did_seek = did_seek,
+      .did_seek = false,
       .request_id = req.request_id,
     };
   };
