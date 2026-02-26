@@ -21,6 +21,8 @@
 #include <rclcpp/generic_publisher.hpp>
 #include <rclcpp/serialization.hpp>
 
+#include <rosbag2_storage/qos.hpp>
+
 #include <atomic>
 #include <chrono>
 #include <csignal>
@@ -198,13 +200,13 @@ public:
       return std::nullopt;
     }
 
-    if (view_iter_ == view_end_) {
+    if (*view_iter_ == *view_end_) {
       status_ = foxglove::PlaybackStatus::Ended;
       current_time_ = time_range_.second;
       return std::nullopt;
     }
 
-    const auto& msg_view = *view_iter_;
+    const auto& msg_view = **view_iter_;
     const auto& msg = msg_view.message;
 
     // Create TimeTracker on first message
@@ -242,7 +244,7 @@ public:
       ros_it->second->publish(*serialized_msg);
     }
 
-    ++view_iter_;
+    ++(*view_iter_);
     return std::nullopt;
   }
 
@@ -260,8 +262,8 @@ private:
         RCLCPP_WARN(rclcpp::get_logger("mcap_player"), "MCAP read problem: %s", s.message.c_str());
       }, opts)
     );
-    view_iter_ = view_->begin();
-    view_end_ = view_->end();
+    view_iter_.emplace(view_->begin());
+    view_end_.emplace(view_->end());
   }
 
   void setup_channel(const mcap::Channel& mcap_ch, mcap::SchemaPtr mcap_schema) {
@@ -290,8 +292,25 @@ private:
     // Create ROS generic publisher for CDR-encoded channels
     if (mcap_ch.messageEncoding == "cdr" && mcap_schema) {
       try {
+        // Use QoS from recorded bag metadata if available
+        rclcpp::QoS qos(10);
+        auto qos_it = mcap_ch.metadata.find("offered_qos_profiles");
+        if (qos_it != mcap_ch.metadata.end()) {
+          try {
+            auto profiles = rosbag2_storage::to_rclcpp_qos_vector(qos_it->second, 9);
+            if (!profiles.empty()) {
+              auto adapted = rosbag2_storage::Rosbag2QoS::adapt_offer_to_recorded_offers(
+                mcap_ch.topic, rosbag2_storage::from_rclcpp_qos_vector(profiles));
+              qos = adapted;
+            }
+          } catch (const std::exception& e) {
+            RCLCPP_WARN(
+              node_->get_logger(), "Failed to parse QoS for '%s': %s, using default",
+              mcap_ch.topic.c_str(), e.what());
+          }
+        }
         auto pub = node_->create_generic_publisher(
-          mcap_ch.topic, mcap_schema->name, rclcpp::QoS(10));
+          mcap_ch.topic, mcap_schema->name, qos);
         ros_publishers_.emplace(mcap_ch.id, std::move(pub));
         RCLCPP_INFO(
           node_->get_logger(), "ROS publisher: %s [%s]", mcap_ch.topic.c_str(),
@@ -315,8 +334,8 @@ private:
 
   // The LinearMessageView must outlive the iterators
   std::optional<mcap::LinearMessageView> view_;
-  mcap::LinearMessageView::Iterator view_iter_;
-  mcap::LinearMessageView::Iterator view_end_;
+  std::optional<mcap::LinearMessageView::Iterator> view_iter_;
+  std::optional<mcap::LinearMessageView::Iterator> view_end_;
 
   std::unordered_map<mcap::ChannelId, foxglove::RawChannel> foxglove_channels_;
   std::unordered_map<mcap::ChannelId, rclcpp::GenericPublisher::SharedPtr> ros_publishers_;
@@ -327,7 +346,9 @@ private:
 int main(int argc, char** argv) {
   rclcpp::init(argc, argv);
 
-  auto node = rclcpp::Node::make_shared("foxglove_mcap_player");
+  rclcpp::NodeOptions node_options;
+  node_options.enable_rosout(false);
+  auto node = rclcpp::Node::make_shared("foxglove_mcap_player", node_options);
   node->declare_parameter<std::string>("file", "");
   node->declare_parameter<int>("port", 8765);
   node->declare_parameter<std::string>("host", "127.0.0.1");
@@ -354,7 +375,7 @@ int main(int argc, char** argv) {
   options.host = host;
   options.port = port;
   options.capabilities =
-    foxglove::WebSocketServerCapabilities::Time | foxglove::WebSocketServerCapabilities::RangedPlayback;
+    foxglove::WebSocketServerCapabilities::Time | foxglove::WebSocketServerCapabilities::PlaybackControl;
   options.playback_time_range = {start_time, end_time};
 
   options.callbacks.onPlaybackControlRequest =

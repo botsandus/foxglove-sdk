@@ -14,6 +14,7 @@
     <buildtool_depend>ament_cmake</buildtool_depend>
 
     <depend>rclcpp</depend>
+    <depend>rosbag2_storage</depend>
 
     <build_depend>ros_environment</build_depend>
 

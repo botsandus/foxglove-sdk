@@ -30,14 +30,14 @@ if (USE_LOCAL_SDK)
   )
 else()
   message(STATUS "Fetching Foxglove SDK artifacts from GitHub")
-  set(FOXGLOVE_SDK_VERSION "0.15.2")
+  set(FOXGLOVE_SDK_VERSION "0.18.0")
 
   if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
     set(FOXGLOVE_SDK_PLATFORM "aarch64-unknown-linux-gnu")
-    set(FOXGLOVE_SDK_SHA "7e8e942c2d5abd0a8f01d5a78a21b0b72740468f500ede99a0a9c90da2fdd851")
+    set(FOXGLOVE_SDK_SHA "42c042365fef1e46b72a956ca37b7f6ebfaf93ce405e7bbd19f38d43c83a17a9")
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
     set(FOXGLOVE_SDK_PLATFORM "x86_64-unknown-linux-gnu")
-    set(FOXGLOVE_SDK_SHA "d07ec994e0b07766e6b68323a1f3bd407dc65391084f376b6169564b6d9873f0")
+    set(FOXGLOVE_SDK_SHA "a428aff940ddebaca617a42328d6245674a824607de9e3991c5291fc3fd4d408")
   else()
     message(FATAL_ERROR "Unsupported platform: ${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}")
   endif()
@@ -82,6 +82,7 @@ pkg_check_modules(ZSTD REQUIRED IMPORTED_TARGET libzstd)
 # ── ROS 2 ────────────────────────────────────────────────────────────────────
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rosbag2_storage REQUIRED)
 
 # ── Executable ────────────────────────────────────────────────────────────────
 add_executable(foxglove_mcap_player
@@ -107,9 +108,13 @@ target_link_libraries(foxglove_mcap_player
   foxglove_cpp_static
   mcap_headers
   rclcpp::rclcpp
+  ${rosbag2_storage_LIBRARIES}
   PkgConfig::LZ4
   PkgConfig::ZSTD
   Threads::Threads
+)
+target_include_directories(foxglove_mcap_player PRIVATE
+  ${rosbag2_storage_INCLUDE_DIRS}
 )
 
 install(TARGETS foxglove_mcap_player
