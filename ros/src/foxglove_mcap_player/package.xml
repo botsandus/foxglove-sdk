@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="3">
+    <name>foxglove_mcap_player</name>
+    <version>0.1.0</version>
+    <description>
+        Plays back an MCAP file with Foxglove ranged playback controls and
+        simultaneously publishes messages to ROS 2 topics.
+    </description>
+    <license>MIT</license>
+    <url type="website">https://github.com/foxglove/foxglove-sdk</url>
+    <author email="ros-tooling+foxglove_bridge@foxglove.dev">Foxglove</author>
+    <maintainer email="ros-tooling+foxglove_bridge@foxglove.dev">Foxglove</maintainer>
+
+    <buildtool_depend>ament_cmake</buildtool_depend>
+
+    <depend>rclcpp</depend>
+
+    <build_depend>ros_environment</build_depend>
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+</package>
