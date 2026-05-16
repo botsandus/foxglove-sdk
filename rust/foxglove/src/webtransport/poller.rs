@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use wtransport::Connection;
+use wtransport::RecvStream;
 
 use super::connected_client::{ConnectedClient, ShutdownReason};
 use super::framing::{StreamOpCode, STREAM_FRAME_HEADER_SIZE, MAX_MESSAGE_SIZE};
@@ -36,11 +37,12 @@ impl Poller {
 
     /// Run the I/O loop for the connected client.
     ///
-    /// This drives four concurrent tasks:
+    /// This drives five concurrent tasks:
     /// 1. Write loop: drains control + data plane queues to a reliable bidirectional stream
     /// 2. Datagram loop: drains the datagram queue as QUIC datagrams (fire-and-forget)
-    /// 3. Read loop: reads client messages from the bidirectional stream
-    /// 4. Shutdown: waits for the shutdown signal
+    /// 3. Read loop: reads client messages from the server-opened bidirectional stream
+    /// 4. Accept loop: accepts client-initiated bidi streams and reads messages from them
+    /// 5. Shutdown: waits for the shutdown signal
     pub async fn run(self, client: &Arc<ConnectedClient>) {
         // Open a bidirectional stream for reliable framed messages.
         let opening = match self.connection.open_bi().await {
@@ -93,41 +95,28 @@ impl Poller {
             }
         };
 
-        // Read loop: parse framed messages from the client.
+        // Read loop: parse framed messages from the client (server-initiated stream).
         let client_ref = Arc::clone(client);
         let rx_loop = async move {
+            read_stream_frames(&client_ref, &mut recv_stream).await;
+        };
+
+        // Accept loop: handle client-initiated bidirectional streams.
+        let client_accept = Arc::clone(client);
+        let accept_loop = async {
             loop {
-                // Read frame header: [opcode: u8][length: u32 LE]
-                let mut header = [0u8; STREAM_FRAME_HEADER_SIZE];
-                if recv_stream.read_exact(&mut header).await.is_err() {
-                    break; // client disconnected
-                }
-                let opcode = header[0];
-                let len = u32::from_le_bytes([header[1], header[2], header[3], header[4]]) as usize;
-
-                if len > MAX_MESSAGE_SIZE {
-                    tracing::error!("Message too large ({len} bytes), disconnecting client");
-                    break;
-                }
-
-                let mut payload = vec![0u8; len];
-                if recv_stream.read_exact(&mut payload).await.is_err() {
-                    break; // client disconnected
-                }
-
-                match StreamOpCode::from_u8(opcode) {
-                    Some(StreamOpCode::Text) => {
-                        // JSON message from client (subscribe, unsubscribe, etc.)
-                        if let Ok(text) = std::str::from_utf8(&payload) {
-                            handle_client_json(&client_ref, text);
-                        }
+                match connection_ref.accept_bi().await {
+                    Ok((_send, mut recv)) => {
+                        tracing::info!("Accepted client-initiated bidi stream");
+                        let client_inner = Arc::clone(&client_accept);
+                        // Spawn a task to read from each accepted stream.
+                        tokio::spawn(async move {
+                            read_stream_frames(&client_inner, &mut recv).await;
+                        });
                     }
-                    Some(StreamOpCode::Binary) | Some(StreamOpCode::CompressedBinary) => {
-                        // Client-to-server binary messages (rare in typical usage).
-                        tracing::debug!("Received binary message from client (opcode={opcode})");
-                    }
-                    None => {
-                        tracing::warn!("Unknown opcode {opcode} from client");
+                    Err(err) => {
+                        tracing::debug!("accept_bi ended: {err}");
+                        break;
                     }
                 }
             }
@@ -142,6 +131,10 @@ impl Poller {
             _ = dgram_loop => {},
             _ = rx_loop => {
                 // Read stream ended — client disconnected.
+                client.shutdown(ShutdownReason::ClientDisconnected);
+            },
+            _ = accept_loop => {
+                // Connection closed — no more streams to accept.
                 client.shutdown(ShutdownReason::ClientDisconnected);
             },
             reason = self.shutdown_rx => {
@@ -197,6 +190,45 @@ fn handle_client_json(client: &ConnectedClient, text: &str) {
         }
         _ => {
             tracing::debug!("Unhandled client op: {op}");
+        }
+    }
+}
+
+/// Read framed messages from a QUIC recv stream and dispatch them.
+///
+/// This is used for both the server-initiated bidi stream and client-initiated streams.
+async fn read_stream_frames(client: &ConnectedClient, recv_stream: &mut RecvStream) {
+    loop {
+        // Read frame header: [opcode: u8][length: u32 LE]
+        let mut header = [0u8; STREAM_FRAME_HEADER_SIZE];
+        if recv_stream.read_exact(&mut header).await.is_err() {
+            break; // stream closed
+        }
+        let opcode = header[0];
+        let len = u32::from_le_bytes([header[1], header[2], header[3], header[4]]) as usize;
+
+        if len > MAX_MESSAGE_SIZE {
+            tracing::error!("Message too large ({len} bytes), closing stream");
+            break;
+        }
+
+        let mut payload = vec![0u8; len];
+        if recv_stream.read_exact(&mut payload).await.is_err() {
+            break; // stream closed
+        }
+
+        match StreamOpCode::from_u8(opcode) {
+            Some(StreamOpCode::Text) => {
+                if let Ok(text) = std::str::from_utf8(&payload) {
+                    handle_client_json(client, text);
+                }
+            }
+            Some(StreamOpCode::Binary) | Some(StreamOpCode::CompressedBinary) => {
+                tracing::debug!("Received binary message from client (opcode={opcode})");
+            }
+            None => {
+                tracing::warn!("Unknown opcode {opcode} from client");
+            }
         }
     }
 }

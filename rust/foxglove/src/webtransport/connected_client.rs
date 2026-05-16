@@ -187,6 +187,7 @@ impl Sink for ConnectedClient {
     }
 
     fn auto_subscribe(&self) -> bool {
+        // Clients subscribe dynamically via the protocol.
         false
     }
 }
