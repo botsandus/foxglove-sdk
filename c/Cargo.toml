@@ -22,6 +22,7 @@ default = ["aws-lc-rs"]
 remote-access = ["foxglove/remote-access"]
 aws-lc-rs = ["foxglove/aws-lc-rs"]
 ring = ["foxglove/ring"]
+webtransport = ["foxglove/webtransport"]
 
 # The full set of supported features, with opinionated choices for mutually-
 # exclusive feature sets.
@@ -42,6 +43,7 @@ foxglove = { path = "../rust/foxglove", default-features = false, features = [
   "sysinfo",
   "websocket",
   "websocket-tls",
+  "webtransport",
   "zstd",
 ] }
 base64 = "0.22.1"

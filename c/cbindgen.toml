@@ -23,6 +23,7 @@ prefix_with_name = false
 [defines]
 "target_family = wasm" = "__wasm__"
 "feature = remote-access" = "FOXGLOVE_REMOTE_ACCESS"
+"feature = webtransport" = "FOXGLOVE_WEBTRANSPORT"
 
 [export]
 [export.rename]
@@ -71,6 +72,8 @@ FoxgloveSystemInfoPublisher = "foxglove_system_info_publisher"
 FoxgloveSystemInfoPublisherOptions = "foxglove_system_info_publisher_options"
 FoxgloveStringBuf = "foxglove_string"
 FoxgloveWebSocketServer = "foxglove_websocket_server"
+FoxgloveWebTransportServer = "foxglove_webtransport_server"
+FoxgloveWebTransportServerOptions = "foxglove_webtransport_server_options"
 FoxgloveConnectionStatus = "foxglove_connection_status"
 FoxgloveCustomWriter = "foxglove_custom_writer"
 FoxgloveGateway = "foxglove_gateway"

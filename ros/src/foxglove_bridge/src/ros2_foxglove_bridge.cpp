@@ -384,6 +384,48 @@ FoxgloveBridge::FoxgloveBridge(const rclcpp::NodeOptions& options)
     RCLCPP_INFO(this->get_logger(), "Remote access gateway started");
   }
 #endif
+
+  // WebTransport server (optional, runs alongside WebSocket)
+  const bool enableWebtransport = this->get_parameter(PARAM_WEBTRANSPORT).as_bool();
+  if (enableWebtransport) {
+    const auto wtPort =
+      static_cast<uint16_t>(this->get_parameter(PARAM_WEBTRANSPORT_PORT).as_int());
+    const auto wtCertfile = this->get_parameter(PARAM_WEBTRANSPORT_CERTFILE).as_string();
+    const auto wtKeyfile = this->get_parameter(PARAM_WEBTRANSPORT_KEYFILE).as_string();
+    const auto wtCompressionLevel =
+      static_cast<int32_t>(this->get_parameter(PARAM_WEBTRANSPORT_COMPRESSION_LEVEL).as_int());
+
+    if (wtCertfile.empty() || !std::filesystem::exists(wtCertfile)) {
+      throw std::invalid_argument(
+        "webtransport_certfile must be provided when WebTransport is enabled and must exist");
+    }
+    if (wtKeyfile.empty() || !std::filesystem::exists(wtKeyfile)) {
+      throw std::invalid_argument(
+        "webtransport_keyfile must be provided when WebTransport is enabled and must exist");
+    }
+
+    foxglove::WebTransportServerOptions wtOptions;
+    wtOptions.context = _serverContext;
+    wtOptions.host = address;
+    wtOptions.port = wtPort;
+    wtOptions.tls_identity = foxglove::WebTransportTlsIdentity{wtCertfile, wtKeyfile};
+    wtOptions.compression_level = wtCompressionLevel;
+
+    const auto wtDatagramTopics =
+      this->get_parameter(PARAM_WEBTRANSPORT_DATAGRAM_TOPICS).as_string_array();
+    wtOptions.datagram_topic_patterns = wtDatagramTopics;
+
+    auto maybeWtServer = foxglove::WebTransportServer::create(std::move(wtOptions));
+    if (!maybeWtServer.has_value()) {
+      throw std::runtime_error(
+        std::string("Couldn't initialize WebTransport server: ") +
+        foxglove::strerror(maybeWtServer.error()));
+    }
+    _webtransportServer =
+      std::make_unique<foxglove::WebTransportServer>(std::move(maybeWtServer.value()));
+    RCLCPP_INFO(this->get_logger(), "WebTransport server listening on port %d (zstd level %d)",
+                _webtransportServer->port(), wtCompressionLevel);
+  }
 }
 
 FoxgloveBridge::~FoxgloveBridge() {
@@ -400,6 +442,9 @@ FoxgloveBridge::~FoxgloveBridge() {
     _gateway->stop();
   }
 #endif
+  if (_webtransportServer) {
+    _webtransportServer->stop();
+  }
   _server->stop();
   RCLCPP_INFO(this->get_logger(), "Shutdown complete");
 }

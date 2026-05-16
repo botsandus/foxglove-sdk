@@ -256,6 +256,67 @@ void declareParameters(rclcpp::Node* node) {
     "Override the Foxglove API base URL. If empty, the SDK default is used.";
   foxgloveApiUrlDescription.read_only = true;
   node->declare_parameter(PARAM_FOXGLOVE_API_URL, "", foxgloveApiUrlDescription);
+
+  // WebTransport parameters
+  auto webtransportDescription = rcl_interfaces::msg::ParameterDescriptor{};
+  webtransportDescription.name = PARAM_WEBTRANSPORT;
+  webtransportDescription.type = rcl_interfaces::msg::ParameterType::PARAMETER_BOOL;
+  webtransportDescription.description =
+    "Enable a WebTransport (QUIC/HTTP3) server with zstd compression for remote visualization. "
+    "Runs alongside the WebSocket server on a separate port. Requires TLS certificate files.";
+  webtransportDescription.read_only = true;
+  node->declare_parameter(PARAM_WEBTRANSPORT, false, webtransportDescription);
+
+  auto webtransportPortDescription = rcl_interfaces::msg::ParameterDescriptor{};
+  webtransportPortDescription.name = PARAM_WEBTRANSPORT_PORT;
+  webtransportPortDescription.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+  webtransportPortDescription.description = "The UDP port to bind the WebTransport server to";
+  webtransportPortDescription.read_only = true;
+  webtransportPortDescription.integer_range.resize(1);
+  webtransportPortDescription.integer_range[0].from_value = 0;
+  webtransportPortDescription.integer_range[0].to_value = 65535;
+  webtransportPortDescription.integer_range[0].step = 1;
+  node->declare_parameter(PARAM_WEBTRANSPORT_PORT, DEFAULT_WEBTRANSPORT_PORT,
+                          webtransportPortDescription);
+
+  auto wtCertfileDescription = rcl_interfaces::msg::ParameterDescriptor{};
+  wtCertfileDescription.name = PARAM_WEBTRANSPORT_CERTFILE;
+  wtCertfileDescription.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING;
+  wtCertfileDescription.description =
+    "Path to PEM-encoded x509 certificate for the WebTransport server (required)";
+  wtCertfileDescription.read_only = true;
+  node->declare_parameter(PARAM_WEBTRANSPORT_CERTFILE, "", wtCertfileDescription);
+
+  auto wtKeyfileDescription = rcl_interfaces::msg::ParameterDescriptor{};
+  wtKeyfileDescription.name = PARAM_WEBTRANSPORT_KEYFILE;
+  wtKeyfileDescription.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING;
+  wtKeyfileDescription.description =
+    "Path to PEM-encoded PKCS8 private key for the WebTransport server (required)";
+  wtKeyfileDescription.read_only = true;
+  node->declare_parameter(PARAM_WEBTRANSPORT_KEYFILE, "", wtKeyfileDescription);
+
+  auto wtCompressionLevelDescription = rcl_interfaces::msg::ParameterDescriptor{};
+  wtCompressionLevelDescription.name = PARAM_WEBTRANSPORT_COMPRESSION_LEVEL;
+  wtCompressionLevelDescription.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+  wtCompressionLevelDescription.description =
+    "zstd compression level for WebTransport (1=fastest, 19=best ratio). Default: 1.";
+  wtCompressionLevelDescription.read_only = true;
+  wtCompressionLevelDescription.integer_range.resize(1);
+  wtCompressionLevelDescription.integer_range[0].from_value = 1;
+  wtCompressionLevelDescription.integer_range[0].to_value = 19;
+  wtCompressionLevelDescription.integer_range[0].step = 1;
+  node->declare_parameter(PARAM_WEBTRANSPORT_COMPRESSION_LEVEL, int64_t(1),
+                          wtCompressionLevelDescription);
+
+  auto wtDatagramTopicsDescription = rcl_interfaces::msg::ParameterDescriptor{};
+  wtDatagramTopicsDescription.name = PARAM_WEBTRANSPORT_DATAGRAM_TOPICS;
+  wtDatagramTopicsDescription.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY;
+  wtDatagramTopicsDescription.description =
+    "Topic patterns for unreliable QUIC datagram delivery (ECMAScript regex). "
+    "Matching topics use datagrams when the compressed message fits within the MTU.";
+  wtDatagramTopicsDescription.read_only = true;
+  node->declare_parameter(PARAM_WEBTRANSPORT_DATAGRAM_TOPICS, std::vector<std::string>({}),
+                          wtDatagramTopicsDescription);
 }
 
 std::vector<std::regex> parseRegexStrings(rclcpp::Node* node,

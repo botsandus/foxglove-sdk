@@ -39,6 +39,8 @@ mod service;
 mod sink_channel_filter;
 #[cfg(not(target_family = "wasm"))]
 mod system_info;
+#[cfg(not(target_family = "wasm"))]
+mod webtransport_server;
 
 #[cfg(not(target_family = "wasm"))]
 pub use server::*;

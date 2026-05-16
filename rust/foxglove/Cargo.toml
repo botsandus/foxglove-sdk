@@ -48,7 +48,13 @@ websocket-tls = [
 # To use `ring`, disable default features and select it explicitly.
 aws-lc-rs = ["rustls?/aws-lc-rs", "tokio-rustls?/aws-lc-rs"]
 ring = ["rustls?/ring", "tokio-rustls?/ring"]
-
+webtransport = [
+  "_remote-common",
+  "dep:wtransport",
+  "aws-lc-rs",
+  "dep:zstd-safe",
+  "dep:regex",
+]
 stream = ["dep:futures", "dep:tokio"]
 data_provider = ["remote_data_loader_backend"]
 remote_data_loader_backend = ["dep:chrono", "chrono/serde", "dep:serde_with", "dep:serde-constant"]
@@ -125,6 +131,8 @@ tokio-util = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
 urlencoding = "2.1.3"
+wtransport = { version = "0.7", optional = true }
+zstd-safe = { version = "7", optional = true }
 
 # img2yuv dependencies
 image = { version = "0.25.9", default-features = false, optional = true }

@@ -507,6 +507,10 @@ typedef struct foxglove_system_info_publisher foxglove_system_info_publisher;
 typedef struct foxglove_websocket_server foxglove_websocket_server;
 #endif
 
+#if !defined(__wasm__)
+typedef struct foxglove_webtransport_server foxglove_webtransport_server;
+#endif
+
 /**
  * A string with associated length.
  */
@@ -2969,6 +2973,78 @@ typedef struct foxglove_system_info_publisher_options {
    */
   const uint64_t *refresh_interval_ms;
 } foxglove_system_info_publisher_options;
+#endif
+
+#if !defined(__wasm__)
+/**
+ * Options for creating a WebTransport server.
+ *
+ * QUIC mandates TLS 1.3 — `tls_cert_path` and `tls_key_path` are required.
+ */
+typedef struct foxglove_webtransport_server_options {
+  /**
+   * `context` can be null, or a valid pointer to a context created via `foxglove_context_new`.
+   * If it's null, the server will be created with the default context.
+   */
+  const struct foxglove_context *context;
+  /**
+   * Host address to bind to. If empty, defaults to "0.0.0.0".
+   */
+  struct foxglove_string host;
+  /**
+   * Port to bind to. May be 0 for automatic selection. Default: 8766.
+   */
+  uint16_t port;
+  /**
+   * Path to a PEM-encoded x509 certificate file. Required.
+   */
+  struct foxglove_string tls_cert_path;
+  /**
+   * Path to a PEM-encoded PKCS8 private key file. Required.
+   */
+  struct foxglove_string tls_key_path;
+  /**
+   * zstd compression level (1 = fastest, 19 = best ratio). Default: 1.
+   */
+  int32_t compression_level;
+  /**
+   * Message backlog size per client. Default: 1024.
+   */
+  size_t message_backlog_size;
+  /**
+   * Maximum QUIC datagram payload size. Messages exceeding this (after compression)
+   * fall back to reliable streams. Default: 1200.
+   */
+  size_t max_datagram_size;
+  /**
+   * Topic patterns for unreliable datagram delivery (ECMAScript regex).
+   * Topics matching any pattern will use QUIC datagrams when the message fits.
+   *
+   * # Safety
+   * - If provided, must be a valid pointer to an array of `datagram_topic_patterns_count`
+   *   FoxgloveString elements.
+   */
+  const struct foxglove_string *datagram_topic_patterns;
+  /**
+   * Number of datagram topic patterns.
+   */
+  size_t datagram_topic_patterns_count;
+  /**
+   * Context provided to the `sink_channel_filter` callback.
+   */
+  const void *sink_channel_filter_context;
+  /**
+   * Optional channel filter. Return false to exclude a channel from this sink.
+   *
+   * # Safety
+   * - If provided, must remain valid until the server is stopped.
+   */
+  bool (*sink_channel_filter)(const void *context, const struct foxglove_channel_descriptor *channel);
+  /**
+   * Lifetime anchor for borrowed references.
+   */
+  const void *_phantom;
+} foxglove_webtransport_server_options;
 #endif
 
 #ifdef __cplusplus
@@ -6477,6 +6553,39 @@ foxglove_error foxglove_system_info_publisher_stop(struct foxglove_system_info_p
  *   either this function or [`foxglove_system_info_publisher_stop`].
  */
 foxglove_error foxglove_system_info_publisher_detach(struct foxglove_system_info_publisher *publisher);
+#endif
+
+#if !defined(__wasm__)
+/**
+ * Create and start a WebTransport server.
+ *
+ * Resources must later be freed by calling `foxglove_webtransport_server_stop`.
+ *
+ * Returns 0 on success, or returns a FoxgloveError code on error.
+ *
+ * # Safety
+ *
+ * - `tls_cert_path` and `tls_key_path` must contain valid UTF-8 file paths.
+ * - If `host` is supplied, it must contain valid UTF-8.
+ * - If `datagram_topic_patterns` is supplied, all elements must contain valid UTF-8
+ *   and the array must have `datagram_topic_patterns_count` elements.
+ */
+foxglove_error foxglove_webtransport_server_start(const struct foxglove_webtransport_server_options *FOXGLOVE_NONNULL options,
+                                                  struct foxglove_webtransport_server **server);
+#endif
+
+#if !defined(__wasm__)
+/**
+ * Get the port on which the WebTransport server is listening.
+ */
+uint16_t foxglove_webtransport_server_get_port(const struct foxglove_webtransport_server *server);
+#endif
+
+#if !defined(__wasm__)
+/**
+ * Stop and shut down a WebTransport server and free its resources.
+ */
+foxglove_error foxglove_webtransport_server_stop(struct foxglove_webtransport_server *server);
 #endif
 
 #ifdef __cplusplus

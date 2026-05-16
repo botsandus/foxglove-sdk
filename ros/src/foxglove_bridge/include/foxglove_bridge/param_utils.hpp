@@ -37,7 +37,15 @@ constexpr char PARAM_REMOTE_ACCESS[] = "remote_access";
 constexpr char PARAM_DEVICE_TOKEN[] = "device_token";
 constexpr char PARAM_FOXGLOVE_API_URL[] = "foxglove_api_url";
 
+constexpr char PARAM_WEBTRANSPORT[] = "webtransport";
+constexpr char PARAM_WEBTRANSPORT_PORT[] = "webtransport_port";
+constexpr char PARAM_WEBTRANSPORT_CERTFILE[] = "webtransport_certfile";
+constexpr char PARAM_WEBTRANSPORT_KEYFILE[] = "webtransport_keyfile";
+constexpr char PARAM_WEBTRANSPORT_COMPRESSION_LEVEL[] = "webtransport_compression_level";
+constexpr char PARAM_WEBTRANSPORT_DATAGRAM_TOPICS[] = "webtransport_datagram_topics";
+
 constexpr int64_t DEFAULT_PORT = 8765;
+constexpr int64_t DEFAULT_WEBTRANSPORT_PORT = 8766;
 constexpr char DEFAULT_ADDRESS[] = "0.0.0.0";
 constexpr int64_t DEFAULT_SEND_BUFFER_LIMIT = 10000000;
 constexpr int64_t DEFAULT_MIN_QOS_DEPTH = 1;

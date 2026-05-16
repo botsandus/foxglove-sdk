@@ -19,6 +19,7 @@
 #include <foxglove/foxglove.hpp>
 #include <foxglove/system_info.hpp>
 #include <foxglove/websocket.hpp>
+#include <foxglove/webtransport.hpp>
 #ifdef FOXGLOVE_REMOTE_ACCESS
 #include <foxglove/remote_access.hpp>
 #endif
@@ -89,6 +90,7 @@ private:
   };
 
   std::unique_ptr<foxglove::WebSocketServer> _server;
+  std::unique_ptr<foxglove::WebTransportServer> _webtransportServer;
   std::unique_ptr<foxglove::SystemInfoPublisher> _sysinfoPublisher;
   std::unordered_map<ChannelId, foxglove::RawChannel> _channels;
 

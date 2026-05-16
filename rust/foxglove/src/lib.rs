@@ -490,6 +490,13 @@ pub mod system_info;
 pub mod websocket;
 #[cfg(feature = "websocket")]
 mod websocket_server;
+
+#[cfg(feature = "webtransport")]
+pub mod webtransport;
+#[cfg(feature = "webtransport")]
+mod webtransport_server;
+#[cfg(feature = "webtransport")]
+pub use webtransport_server::{WebTransportServer, WebTransportServerHandle};
 #[doc(hidden)]
 #[cfg(feature = "websocket")]
 pub use websocket::ws_protocol;

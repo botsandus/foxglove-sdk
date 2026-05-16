@@ -25,6 +25,12 @@
   <arg name="remote_access"                  default="false" />
   <arg name="device_token"                   default="" />
   <arg name="foxglove_api_url"               default="" />
+  <arg name="webtransport"                   default="false" />
+  <arg name="webtransport_port"              default="8766" />
+  <arg name="webtransport_certfile"          default="" />
+  <arg name="webtransport_keyfile"           default="" />
+  <arg name="webtransport_compression_level" default="1" />
+  <arg name="webtransport_datagram_topics"   default="[]" />
 
   <node pkg="foxglove_bridge" exec="foxglove_bridge">
     <param name="port"                            value="$(var port)" />
@@ -53,5 +59,11 @@
     <param name="remote_access"                  value="$(var remote_access)" />
     <param name="device_token"                   value="$(var device_token)" />
     <param name="foxglove_api_url"               value="$(var foxglove_api_url)" />
+    <param name="webtransport"                   value="$(var webtransport)" />
+    <param name="webtransport_port"              value="$(var webtransport_port)" />
+    <param name="webtransport_certfile"          value="$(var webtransport_certfile)" />
+    <param name="webtransport_keyfile"           value="$(var webtransport_keyfile)" />
+    <param name="webtransport_compression_level" value="$(var webtransport_compression_level)" />
+    <param name="webtransport_datagram_topics"   value="$(var webtransport_datagram_topics)" />
   </node>
 </launch>

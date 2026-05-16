@@ -21,5 +21,5 @@ pub mod v1;
 
 // Protocol v2
 #[allow(unused)]
-#[cfg(feature = "remote-access")]
+#[cfg(any(feature = "remote-access", feature = "webtransport"))]
 pub mod v2;
