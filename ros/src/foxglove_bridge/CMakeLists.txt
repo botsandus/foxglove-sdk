@@ -54,6 +54,7 @@ if(NOT DEFINED CACHE{FOXGLOVE_BRIDGE_REMOTE_ACCESS})
   endif()
 endif()
 option(FOXGLOVE_BRIDGE_REMOTE_ACCESS "Build with remote access gateway support" ${_remote_access_default})
+option(FOXGLOVE_BRIDGE_WEBTRANSPORT "Build with WebTransport (QUIC/HTTP3 + zstd) support" OFF)
 
 if(FOXGLOVE_BRIDGE_REMOTE_ACCESS AND _glibc_too_old)
   message(WARNING "FOXGLOVE_BRIDGE_REMOTE_ACCESS=ON but build host has glibc ${_glibc_version} (< 2.35); the link step is likely to fail.")
@@ -120,9 +121,9 @@ find_package(foxglove-sdk CONFIG REQUIRED HINTS "${foxglove_sdk_SOURCE_DIR}")
 # Always build the C++ wrapper as a SHARED library: with RA, dynamic-link the RA
 # cdylib (libfoxglove.so); without RA, statically link the staticlib into the wrapper.
 if (FOXGLOVE_BRIDGE_REMOTE_ACCESS)
-  foxglove_sdk_add_cpp_library(foxglove_cpp_shared TYPE SHARED REMOTE_ACCESS ON)
+  foxglove_sdk_add_cpp_library(foxglove_cpp_shared TYPE SHARED REMOTE_ACCESS ON WEBTRANSPORT ${FOXGLOVE_BRIDGE_WEBTRANSPORT})
 else()
-  foxglove_sdk_add_cpp_library(foxglove_cpp_shared TYPE SHARED REMOTE_ACCESS OFF)
+  foxglove_sdk_add_cpp_library(foxglove_cpp_shared TYPE SHARED REMOTE_ACCESS OFF WEBTRANSPORT ${FOXGLOVE_BRIDGE_WEBTRANSPORT})
 endif()
 set_target_properties(foxglove_cpp_shared PROPERTIES
   BUILD_WITH_INSTALL_RPATH TRUE
@@ -185,6 +186,10 @@ target_compile_definitions(foxglove_bridge_component
 
 if (FOXGLOVE_BRIDGE_REMOTE_ACCESS)
   target_compile_definitions(foxglove_bridge_component PUBLIC FOXGLOVE_REMOTE_ACCESS)
+endif()
+
+if (FOXGLOVE_BRIDGE_WEBTRANSPORT)
+  target_compile_definitions(foxglove_bridge_component PUBLIC FOXGLOVE_WEBTRANSPORT)
 endif()
 
 target_link_libraries(foxglove_bridge_component

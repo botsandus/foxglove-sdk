@@ -385,6 +385,7 @@ FoxgloveBridge::FoxgloveBridge(const rclcpp::NodeOptions& options)
   }
 #endif
 
+#ifdef FOXGLOVE_WEBTRANSPORT
   // WebTransport server (optional, runs alongside WebSocket)
   const bool enableWebtransport = this->get_parameter(PARAM_WEBTRANSPORT).as_bool();
   if (enableWebtransport) {
@@ -426,6 +427,7 @@ FoxgloveBridge::FoxgloveBridge(const rclcpp::NodeOptions& options)
     RCLCPP_INFO(this->get_logger(), "WebTransport server listening on port %d (zstd level %d)",
                 _webtransportServer->port(), wtCompressionLevel);
   }
+#endif
 }
 
 FoxgloveBridge::~FoxgloveBridge() {
@@ -442,9 +444,11 @@ FoxgloveBridge::~FoxgloveBridge() {
     _gateway->stop();
   }
 #endif
+#ifdef FOXGLOVE_WEBTRANSPORT
   if (_webtransportServer) {
     _webtransportServer->stop();
   }
+#endif
   _server->stop();
   RCLCPP_INFO(this->get_logger(), "Shutdown complete");
 }
