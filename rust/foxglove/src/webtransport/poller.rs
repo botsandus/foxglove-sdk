@@ -135,9 +135,15 @@ impl Poller {
 
         // Wait for any task to complete or shutdown signal.
         tokio::select! {
-            _ = tx_loop => {},
+            _ = tx_loop => {
+                // Write stream failed — connection broken.
+                client.shutdown(ShutdownReason::ClientDisconnected);
+            },
             _ = dgram_loop => {},
-            _ = rx_loop => {},
+            _ = rx_loop => {
+                // Read stream ended — client disconnected.
+                client.shutdown(ShutdownReason::ClientDisconnected);
+            },
             reason = self.shutdown_rx => {
                 match reason {
                     Ok(ShutdownReason::ControlPlaneQueueFull) => {
@@ -146,7 +152,8 @@ impl Poller {
                     Ok(ShutdownReason::ServerStopped) => {
                         tracing::info!("Server stopping, disconnecting client");
                     }
-                    _ => {}
+                    Ok(ShutdownReason::ClientDisconnected) => {}
+                    Err(_) => {}
                 }
             },
         }

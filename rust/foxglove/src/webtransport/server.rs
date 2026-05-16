@@ -1,7 +1,7 @@
 //! WebTransport server — QUIC endpoint accept loop and client lifecycle.
 
 use std::net::SocketAddr;
-use std::sync::{Arc, Weak};
+use std::sync::Arc;
 
 use tokio::task::JoinSet;
 use wtransport::tls::Identity;
@@ -11,7 +11,7 @@ use crate::sink_channel_filter::SinkChannelFilter;
 use crate::Context;
 
 use super::compression::{Compressor, DEFAULT_COMPRESSION_LEVEL};
-use super::connected_client::ConnectedClient;
+use super::connected_client::{ConnectedClient, ShutdownReason};
 use super::poller::Poller;
 
 /// Default message backlog size per client.
@@ -134,7 +134,7 @@ pub(crate) async fn start_server(
 
     tokio::spawn(async move {
         let mut client_tasks = JoinSet::new();
-        let server_handle: Weak<ServerHandle> = Weak::new(); // placeholder
+        let mut clients: Vec<Arc<ConnectedClient>> = Vec::new();
 
         loop {
             tokio::select! {
@@ -173,7 +173,7 @@ pub(crate) async fn start_server(
                         connection,
                         data_rx.clone(),
                         control_rx,
-                        dgram_rx.clone(),
+                        dgram_rx,
                         shutdown_rx,
                     );
 
@@ -184,7 +184,6 @@ pub(crate) async fn start_server(
 
                     let client = ConnectedClient::new(
                         &ctx_weak,
-                        &server_handle,
                         poller,
                         label.clone(),
                         filter,
@@ -195,12 +194,14 @@ pub(crate) async fn start_server(
                         data_rx,
                         control_tx,
                         dgram_tx,
-                        dgram_rx,
                         shutdown_tx,
                     );
 
                     // Register the client as a sink with the context.
                     context.add_sink(Arc::clone(&client) as Arc<dyn crate::Sink>);
+
+                    // Keep a reference so we can signal shutdown later.
+                    clients.push(Arc::clone(&client));
 
                     // Spawn the client's I/O loop.
                     let client_clone = Arc::clone(&client);
@@ -213,7 +214,12 @@ pub(crate) async fn start_server(
             }
         }
 
-        // Clean up: abort remaining client tasks.
+        // Signal all connected clients to shut down gracefully.
+        for client in &clients {
+            client.shutdown(ShutdownReason::ServerStopped);
+        }
+
+        // Wait for all client tasks to finish.
         client_tasks.shutdown().await;
     });
 

@@ -11,6 +11,7 @@ static THROTTLER: Mutex<Throttler> = Mutex::new(Throttler::new(Duration::from_se
 
 /// Result of a lossy send attempt.
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)] // variants read in match arms; field used for logging
 pub(crate) enum SendLossyResult {
     /// Message sent without dropping anything.
     Sent,

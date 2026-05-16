@@ -25,7 +25,6 @@ use super::framing::{
 };
 use super::poller::Poller;
 use super::send_lossy::{self, MAX_SEND_RETRIES};
-use super::server::ServerHandle;
 
 use crate::protocol::common::server::advertise;
 use crate::protocol::common::server::{Advertise, Unadvertise};
@@ -63,7 +62,6 @@ pub(super) enum ShutdownReason {
 pub(super) struct ConnectedClient {
     id: ClientId,
     label: String,
-    weak_self: Weak<Self>,
     sink_id: SinkId,
     channel_filter: Option<Arc<dyn SinkChannelFilter>>,
     context: Weak<Context>,
@@ -77,7 +75,6 @@ pub(super) struct ConnectedClient {
     control_plane_tx: flume::Sender<Bytes>,
     /// Datagram plane (unreliable compressed binary frames).
     datagram_tx: flume::Sender<Bytes>,
-    datagram_rx: flume::Receiver<Bytes>,
     /// Subscriptions from this client: channel_id <-> subscription counter.
     subscriptions: parking_lot::Mutex<BiHashMap<ChannelId, u64>>,
     /// Next subscription counter.
@@ -92,8 +89,6 @@ pub(super) struct ConnectedClient {
     max_datagram_size: usize,
     /// Shutdown signal.
     shutdown_tx: parking_lot::Mutex<Option<tokio::sync::oneshot::Sender<ShutdownReason>>>,
-    /// Weak reference to server.
-    server: Weak<ServerHandle>,
 }
 
 impl std::fmt::Debug for ConnectedClient {
@@ -200,7 +195,6 @@ impl ConnectedClient {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn new(
         context: &Weak<Context>,
-        server: &Weak<ServerHandle>,
         poller: Poller,
         label: String,
         channel_filter: Option<Arc<dyn SinkChannelFilter>>,
@@ -211,14 +205,12 @@ impl ConnectedClient {
         data_plane_rx: flume::Receiver<Bytes>,
         control_plane_tx: flume::Sender<Bytes>,
         datagram_tx: flume::Sender<Bytes>,
-        datagram_rx: flume::Receiver<Bytes>,
         shutdown_tx: tokio::sync::oneshot::Sender<ShutdownReason>,
     ) -> Arc<Self> {
 
-        Arc::new_cyclic(|weak_self| Self {
+        Arc::new(Self {
             id: ClientId::next(),
             label,
-            weak_self: weak_self.clone(),
             sink_id: SinkId::next(),
             context: context.clone(),
             channel_filter,
@@ -228,7 +220,6 @@ impl ConnectedClient {
             data_plane_rx,
             control_plane_tx,
             datagram_tx,
-            datagram_rx,
             subscriptions: parking_lot::Mutex::default(),
             next_subscription_id: AtomicU32::new(1),
             datagram_sequences: parking_lot::Mutex::default(),
@@ -236,16 +227,11 @@ impl ConnectedClient {
             datagram_patterns,
             max_datagram_size,
             shutdown_tx: parking_lot::Mutex::new(Some(shutdown_tx)),
-            server: server.clone(),
         })
     }
 
     pub fn id(&self) -> ClientId {
         self.id
-    }
-
-    pub fn sink_id(&self) -> SinkId {
-        self.sink_id
     }
 
     /// Check if a channel should use datagram (unreliable) delivery.
