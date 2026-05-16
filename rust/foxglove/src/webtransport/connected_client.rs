@@ -111,10 +111,8 @@ impl Sink for ConnectedClient {
         msg: &[u8],
         metadata: &Metadata,
     ) -> Result<(), FoxgloveError> {
-        let subscriptions = self.subscriptions.lock();
-        if !subscriptions.contains_left(&channel.id()) {
-            return Ok(());
-        }
+        // The context already gates which channels are delivered to this sink
+        // (via subscribe_global or subscribe_channels). No additional check needed here.
 
         // Encode the v2 MessageData (channel_id + log_time + raw data).
         let message_data = MessageData::new(channel.id().into(), metadata.log_time, msg);
